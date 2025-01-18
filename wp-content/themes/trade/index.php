@@ -75,6 +75,12 @@ render_subcategories(0);  // 0 — это ID родительской катег
         </div>
     <?php endforeach; ?>
 </div>
+<div class="filters">
+    <button class="filter-button" data-filter="all">Все товары</button>
+    <button class="filter-button" data-filter="high-stock">Высокий остаток</button>
+    <button class="filter-button" data-filter="medium-stock">Средний остаток</button>
+    <button class="filter-button" data-filter="low-stock">Низкий остаток</button>
+</div>
 
 <div class="tabs-content">
     <?php foreach ($parent_categories as $parent_category) : ?>
@@ -221,36 +227,60 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработчик для кнопки "Добавить в корзину"
-    const addToCartButtons = document.querySelectorAll('.add-to-cart-button');
-    
-    addToCartButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault(); // Отменить стандартное поведение (переход по ссылке)
-            
-            const productId = this.getAttribute('href').split('add-to-cart=')[1]; // Получаем ID товара из URL
-            const productName = this.closest('.product-item').querySelector('h2').innerText; // Получаем название товара
+document.addEventListener("DOMContentLoaded", () => {
+    const stockFilterButtons = document.querySelectorAll(".filter-button"); // Предположим, у вас есть кнопки с классом `filter-button`
+    const productItems = document.querySelectorAll(".product-item");
 
-            // Можно добавить дополнительные параметры, если нужно
+    stockFilterButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const filterClass = button.dataset.filter; // Класс для фильтрации из атрибута `data-filter`
 
-            // Делайте здесь ваш запрос на добавление товара в корзину, например с использованием fetch
-            fetch('/?add-to-cart=' + productId)
-                .then(response => response.json())
-                .then(data => {
-                    // Здесь можно обработать ответ от сервера
-                    alert(productName + ' был добавлен в корзину!');
-                    // Опционально, обновить корзину или показать уведомление
-                    window.location.reload(); // Перезагружаем страницу, чтобы обновить корзину
-                })
-                .catch(error => {
-                    console.error('Ошибка при добавлении товара в корзину', error);
-                });
+            productItems.forEach(item => {
+                if (filterClass === "all" || item.classList.contains(filterClass)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+    });
+});
+
+
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const sortSelect = document.getElementById('price_sort');
+
+    sortSelect.addEventListener('change', function () {
+        const sortOrder = this.value;
+        const productLists = document.querySelectorAll('.product-list');
+
+        productLists.forEach(productList => {
+            const products = Array.from(productList.querySelectorAll('.product-item'));
+
+            // Сортировка товаров
+            products.sort((a, b) => {
+                const priceA = parseFloat(a.getAttribute('data-price')) || 0;
+                const priceB = parseFloat(b.getAttribute('data-price')) || 0;
+
+                if (sortOrder === 'asc') {
+                    return priceA - priceB;
+                } else if (sortOrder === 'desc') {
+                    return priceB - priceA;
+                }
+                return 0;
+            });
+
+            // Перемещение товаров в отсортированном порядке
+            products.forEach(product => productList.appendChild(product));
         });
     });
 });
 
 </script>
+
 
 
 <?php
