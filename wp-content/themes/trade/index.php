@@ -44,9 +44,9 @@ function render_subcategories($parent_id) {
             // Выводим подкатегорию с нужными аттрибутами
             echo '<li class="subcategory-item">';
             echo '<button class="subcategory-button" 
-             data-category="' . esc_attr($subcategory->slug) . '" 
-             data-subcategory-slug="' . esc_attr($subcategory->slug) . '">
-             ' . esc_html($subcategory->slug) . '</button>';
+            data-category="' . esc_attr($subcategory->slug) . '" 
+            data-subcategory-slug="' . esc_attr($subcategory->slug) . '">
+            ' . esc_html($subcategory->name) . '</button>';
             
             // Рекурсивный вызов для вывода вложенных подкатегорий
             render_subcategories($subcategory->term_id);
@@ -90,13 +90,55 @@ render_subcategories(0);  // 0 — это ID родительской катег
             // Проверяем, есть ли товары
             if (!empty($products)) :
                 foreach ($products as $product) :
+                    // Получаем количество товара на складе
+                    $stock_quantity = $product->get_stock_quantity();
+                    $stock_class = '';
+
+                    // Определение класса по количеству товаров на складе
+                    if ($stock_quantity === null || $stock_quantity <= 0) {
+                        $stock_class = 'low-stock'; // Нет в наличии
+                    } elseif ($stock_quantity <= 3) {
+                        $stock_class = 'low-stock'; // Мало товаров
+                    } elseif ($stock_quantity <= 5) {
+                        $stock_class = 'medium-stock'; // Среднее количество
+                    } elseif ($stock_quantity <= 10) {
+                        $stock_class = 'medium-stock'; // Среднее количество
+                    } else {
+                        $stock_class = 'high-stock'; // Большое количество
+                    }
+
+                    // Получаем цену товара
+                    $price = $product->get_price();
+
                     // Получаем категории товара
                     $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['orderby' => 'parent', 'order' => 'ASC']);
                     $category_slugs = wp_list_pluck($categories, 'slug'); // Извлекаем только слаги
                     ?>
-                    <div class="product-item" 
+                    <div class="product-item <?php echo esc_attr($stock_class); ?>" 
                          data-product-category-subcategory="<?php echo esc_attr(implode(' > ', $category_slugs)); ?>">
-                        <h2><?php echo esc_html($product->get_name()); ?></h2>
+                         <a href="<?php echo esc_url(get_permalink($product->get_id())); ?>" class="product-link">
+        <h2><?php echo esc_html($product->get_name()); ?></h2>
+    </a>
+                        
+                        <!-- Отображение цены товара -->
+                        <span class="product-price">
+                            <?php 
+                            echo $price ? wc_price($price) : esc_html__('Цена не указана', 'trade'); 
+                            ?>
+                        </span>
+                        
+                        <!-- Отображение количества товара -->
+                        <span class="product-stock">
+                            <?php 
+                            echo $stock_quantity !== null ? esc_html($stock_quantity) . ' ' . esc_html__('шт.', 'trade') : esc_html__('Не указано', 'trade'); 
+                            ?>
+                        </span>
+                        
+                        <!-- Кнопка добавления в корзину -->
+                        <a href="<?php echo esc_url( wc_get_cart_url() . '?add-to-cart=' . $product->get_id() ); ?>" 
+                           class="add-to-cart-button">
+                            <?php esc_html_e('Добавить в корзину', 'trade'); ?>
+                        </a>
                     </div>
                 <?php
                 endforeach;
@@ -107,6 +149,7 @@ render_subcategories(0);  // 0 — это ID родительской катег
         </div>
     <?php endforeach; ?>
 </div>
+
 
 
 
@@ -175,6 +218,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопки "Добавить в корзину"
+    const addToCartButtons = document.querySelectorAll('.add-to-cart-button');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault(); // Отменить стандартное поведение (переход по ссылке)
+            
+            const productId = this.getAttribute('href').split('add-to-cart=')[1]; // Получаем ID товара из URL
+            const productName = this.closest('.product-item').querySelector('h2').innerText; // Получаем название товара
+
+            // Можно добавить дополнительные параметры, если нужно
+
+            // Делайте здесь ваш запрос на добавление товара в корзину, например с использованием fetch
+            fetch('/?add-to-cart=' + productId)
+                .then(response => response.json())
+                .then(data => {
+                    // Здесь можно обработать ответ от сервера
+                    alert(productName + ' был добавлен в корзину!');
+                    // Опционально, обновить корзину или показать уведомление
+                    window.location.reload(); // Перезагружаем страницу, чтобы обновить корзину
+                })
+                .catch(error => {
+                    console.error('Ошибка при добавлении товара в корзину', error);
+                });
+        });
+    });
+});
 
 </script>
 
