@@ -176,3 +176,27 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
 
+function trade_enqueue_scripts() {
+    wp_enqueue_script(
+        'trade-sub-category',
+        get_template_directory_uri() . '/assets/sub_category.js',
+        array('jquery'),
+        null,
+        true 
+    );
+	wp_enqueue_script(
+        'tab-category',
+        get_template_directory_uri() . '/assets/tab_open.js',
+        array('jquery'),
+        null,
+        true 
+    );
+	wp_enqueue_script(
+        'filter-btn',
+        get_template_directory_uri() . '/assets/filter-btn.js',
+        array('jquery'),
+        null,
+        true 
+    );
+}
+add_action('wp_enqueue_scripts', 'trade_enqueue_scripts');
